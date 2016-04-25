@@ -56,3 +56,13 @@ Final published URL format you would place in external email systems clients wou
 http://contosounivesity.edu/owa/calendar/<userID+CalendarID>.ics
 
 or they could just leverage the HTML view.
+
+Optional Step 5: If using OWA “publish this calendar” is not an option this is an alternative step
+
+Once policy and vdir access are set, can publish calendar
+
+set-mailboxcalendarfolder –Identity <alias>:\calendar -SearchableUrlEnabled (default $false) -DetailLevel (default AvailabilityOnly)
+
+-PublishDateRangeFrom (default ThreeMonths)
+
+-PublishDateRangeTo (default ThreeMonths)
