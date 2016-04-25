@@ -1,6 +1,11 @@
 
+#Create Shared Mailbox
+#Alias is the default suffix used for email address in the default email address policy in Exchange 
 
-Exchange Shared Calendar Permissions 
+New-Mailbox -Shared -Name "Sales Department" -DisplayName "Sales Department" -Alias Sales | Set-Mailbox -GrantSendOnBehalfTo MarketingSG | Add-MailboxPermission -User MarketingSG -AccessRights FullAccess -InheritanceType All
+
+
+#Exchange Shared Calendar Permissions 
 
 
 ## Permissions can be set on the folder (<User>:\Calendar) or on the specific calendar (<User>:\Calendar\SpecficCal) 
