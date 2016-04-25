@@ -43,4 +43,16 @@ ContactsSharing   Share contacts only.
 
 Step 4) 
 Log in to OWA, go to your calendar, and choose “Sharing”. You can share your calendar details by sending it to some email address. Do send it to your own email address. You will receive the URLs needed to access your shared schedule.
+Optional Step 6:
 
+Once calendar is published, can retrieve users URL’s
+
+get-mailboxcalendarfolder –Identity <alias>:\calendar
+
+ 
+
+Final published URL format you would place in external email systems clients would be something like this:
+
+http://contosounivesity.edu/owa/calendar/<userID+CalendarID>.ics
+
+or they could just leverage the HTML view.
