@@ -1,0 +1,41 @@
+
+
+Exchange Shared Calendar Permissions 
+
+
+## Permissions can be set on the folder (<User>:\Calendar) or on the specific calendar (<User>:\Calendar\SpecficCal) 
+
+Set-MailboxFolderPermission -Identity <User>:\Calendar[\Specfic_Calendar] -User [ed@contoso.com | Shared-Access-Group] -AccessRights  [ Owner | Editor | Reviewer ]
+
+Get-MailboxFolderPermission -Identity john@contoso.com:\Marketing\Reports
+
+## Enable Internet Publishing of Calendar 
+
+#Set the Default Sharing Policy to allow sharing to the anonymous Domains access 
+# I was not able to set the domain policy on "Default Sharing Policy"
+
+Set-SharingPolicy -Identity SharingPolicy01 -Domains "anonymous:CalendarSharingFreeBusyDetailed ,contoso.com: CalendarSharingFreeBusySimple", "atlanta.contoso.com: CalendarSharingFreeBusyReviewer", "beijing.contoso.com: CalendarSharingFreeBusyReviewer" +
+-Default $true -Enabled $true 
+
+1) Configure the Web proxy URL for the Mailbox server (this step is only necessary if a Web proxy URL already exists in your organization, otherwise skip to step 2).
+       
+2) Enable the publishing virtual directory for the Client Access server.
+
+Set : Set-OwaVirtualDirectory -Identity "CAS01\owa (Default Web Site)" -ExternalUrl "<URL for CAS01>" -CalendarEnabled $true
+Verify : Get-OwaVirtualDirectory | format-list (verify external url) 
+
+3) Create a dedicated sharing policy specifically for Internet calendar publishing or update the default sharing policy to support the Anonymous domain. Either method allows users in your Exchange organization to invite other users who have Internet access to view limited calendar availability information by accessing a published URL.
+
+Set-SharingPolicy -Identity SharingPolicy01 -Domains "anonymous:CalendarSharingFreeBusyDetailed ,contoso.com: CalendarSharingFreeBusySimple", "atlanta.contoso.com: CalendarSharingFreeBusyReviewer", "beijing.contoso.com: CalendarSharingFreeBusyReviewer" +
+-Default $true -Enabled $true  
+
+Note * != anonymous , * relates to internal not external. 
+
+CalendarSharingFreeBusySimple   Share free/busy hours only.
+CalendarSharingFreeBusyDetail   Share free/busy hours, subject, and location.
+CalendarSharingFreeBusyReviewer   Share free/busy hours, subject, location, and the body of the message or calendar item.
+ContactsSharing   Share contacts only.
+
+Step 4) 
+Log in to OWA, go to your calendar, and choose “Sharing”. You can share your calendar details by sending it to some email address. Do send it to your own email address. You will receive the URLs needed to access your shared schedule.
+
