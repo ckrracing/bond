@@ -3,7 +3,35 @@
 #Alias is the default suffix used for email address in the default email address policy in Exchange 
 
 Create: New-Mailbox -Shared -Name "Sales Department" -DisplayName "Sales Department" -Alias Sales | Set-Mailbox -GrantSendOnBehalfTo MarketingSG | Add-MailboxPermission -User MarketingSG -AccessRights FullAccess -InheritanceType All
-Verify: Get-Mailbox -ResultSize unlimited | where {$_.RecipientTypeDetails -eq 'sharedmailbox' } 
+Verify: Get-Mailbox -ResultSize unlimited -RecipientTypeDetails SharedMailbox 
+
+values for RecipientType Details are 
+ArbitrationMailbox
+ConferenceRoomMailbox
+Contact
+DiscoveryMailbox
+DynamicDistributionGroup
+EquipmentMailbox
+ExternalManagedContact
+ExternalManagedDistributionGroup
+LegacyMailbox
+LinkedMailbox
+MailboxPlan
+MailContact
+MailForestContact
+MailNonUniversalGroup
+MailUniversalDistributionGroup
+MailUniversalSecurityGroup
+MailUser
+PublicFolder
+RoleGroup
+RoomList
+RoomMailbox
+SharedMailbox
+SystemAttendantMailbox
+SystemMailbox
+User
+UserMailbox
 
 #Exchange Shared Calendar Permissions 
 
