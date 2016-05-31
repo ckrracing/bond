@@ -1,0 +1,15 @@
+##Boot Domain Controller to DSRM 
+
+bcdedit.exe /set safeboot dsrepair 
+shutdown.exe /s /t 0
+
+bcdedit /deletevalue <{default}??> safeboot
+shutdown.exe -t 0 -r 
+
+dcdiag /test:MachineAccount
+dcdiag /test:replications
+
+## Further information 
+http://woshub.com/windows-8-2012-fix-failure-configuring-windows-updates-reverting-changes/
+https://technet.microsoft.com/en-us/library/jj574118.aspx
+https://technet.microsoft.com/en-us/library/mt703722.aspx
