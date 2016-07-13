@@ -15,6 +15,10 @@ $job = $null ;
 #$path = $env:TEMP + "_" + (Get-Date -uformat %m-%d-%Y_%I-%M-%S) + ".txt"
 $path = $env:TEMP + "\Veeam_Backup_Summary_latest" + ".txt" 
 
+$version = Get-VeeamVersion() ; 
+
+ "Veeam Version : $version" | Out-File $path ;
+
  Get-VBRJob | ForEach  {
 
  $job = $_; 
