@@ -1,8 +1,13 @@
 $SITEID = '0514';
 
 Clear-Host
+
+
 # Add Veeam snap-in if required
 If ((Get-PSSnapin -Name VeeamPSSnapin -ErrorAction SilentlyContinue) -eq $null) {add-pssnapin VeeamPSSnapin}
+
+
+
 
 $scheduleType = $null; 
 $scheduleTime = $null; 
@@ -142,4 +147,12 @@ $smtpserver = "$SITEID-MSX001"
 #$smtp.Send($message)
 
 #################################################################################
+
+Function Get-VeeamVersion {	
+	# Location of Veeam executable (Veeam.Backup.Shell.exe)
+	$veeamExePath = "C:\Program Files\Veeam\Backup and Replication\Backup\Veeam.Backup.Shell.exe"
+	$veeamExe = Get-Item $veeamExePath
+	$VeeamVersion = $veeamExe.VersionInfo.ProductVersion
+	Return $VeeamVersion
+} 
 }
