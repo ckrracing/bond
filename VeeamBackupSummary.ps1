@@ -58,7 +58,12 @@ elseif($_.ScheduleOptions.OptionsPeriodically.Enabled -eq $true ){
   $scheduleType = 'N/A'
   }
 
-$restorePointCount  = $job.Options.GenerationPolicy.SimpleRetentionRestorePoints
+if($job.jobType -ne 'COPY') {
+	$restorePointCount  = $job.Options.GenerationPolicy.SimpleRetentionRestorePoints
+}
+else {
+	$restorePointCount = 'N/A'	
+}
 $repo = (Get-VBRBackupRepository | ?{$_.HostId -eq $job.TargetHostId -and $_.Path -eq $job.TargetDir})
 $repoName  = $repo.name ;
 $repoCreds =  Get-VBRCredentials |  ?{$_.Id -eq $repo.ShareCredsId } | Select -ExpandProperty name
