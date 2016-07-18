@@ -1,6 +1,14 @@
-$SITEID = '0514';
+$SITEID = '1511';
 
 Clear-Host
+
+Function Get-VeeamVersion {	
+	# Location of Veeam executable (Veeam.Backup.Shell.exe)
+	$veeamExePath = "C:\Program Files\Veeam\Backup and Replication\Backup\Veeam.Backup.Shell.exe"
+	$veeamExe = Get-Item $veeamExePath
+	$VeeamVersion = $veeamExe.VersionInfo.ProductVersion
+	Return $VeeamVersion
+}
 
 
 # Add Veeam snap-in if required
@@ -15,7 +23,7 @@ $job = $null ;
 #$path = $env:TEMP + "_" + (Get-Date -uformat %m-%d-%Y_%I-%M-%S) + ".txt"
 $path = $env:TEMP + "\Veeam_Backup_Summary_latest" + ".txt" 
 
-$version = Get-VeeamVersion() ; 
+$version = Get-VeeamVersion ; 
 
  "Veeam Version : $version" | Out-File $path ;
 
@@ -99,7 +107,7 @@ $generationPolicy = $null;
 
 $_ | Get-VBRJobObject | Select -Property Name, jobId , approxSizeString , VSSOptions | Sort JobId |
  Format-Table @{Expression={$_.Name};Label="Virtual Machine";width=25} ,@{Expression={$_.approxSizeString};Label="Size(GB)";width=16},@{Expression={$_.vssOptions.enabled };Label="VSS Enabled";width=16}
-} | Out-File $path 
+} | Out-File $path -Append
 
 $currentSummaryPath = $env:TEMP + "\Veeam_Backup_Summary" + ".txt"
 $currentSummary = $null;
@@ -152,11 +160,5 @@ $smtpserver = "$SITEID-MSX001"
 
 #################################################################################
 
-Function Get-VeeamVersion {	
-	# Location of Veeam executable (Veeam.Backup.Shell.exe)
-	$veeamExePath = "C:\Program Files\Veeam\Backup and Replication\Backup\Veeam.Backup.Shell.exe"
-	$veeamExe = Get-Item $veeamExePath
-	$VeeamVersion = $veeamExe.VersionInfo.ProductVersion
-	Return $VeeamVersion
-} 
+
 }
