@@ -1,14 +1,57 @@
 Param(
+
   [switch]$force,
-  [string]$options 
+
+  #job options file is in the current directory
+  [string]$options_file = "C:\Bond\TEST\Veeam\job-options.json" ,
+
+  [string]$site_options_file = "C:\Bond\TEST\vbw-options.json" 
+  
+ 
 )
 
-#### Configure the root directory to where Veeam_Backup_Summary.txt and Veeam_Backup_Summary_latest.txt will be written to ####
-#### this must match the property in vbw-options.json file which specifies the path to the Veeam_Backup_Summary.txt file which will be uploaded to bwiki ####
+#."C:\Users\Public\Documents\PS2EXE-v0.5.0.0\vc\bond\functions.ps1"
 
-$rootDir = "C:\Bond\veeam"; 
+## latest file ## 
 
-#."$rootDir\functions.ps1"
+Function readJobOptions {
+
+ Param(
+       [string] $options_file 
+       )
+   
+   Try {
+
+        $optionsJson = Get-Content  $options_file -Raw -ErrorAction Stop
+
+   }
+
+   Catch{
+
+        $errorMsg = "Unable to find job-options.json file , Unable to continue" 
+
+        # Note when an error was encountered during Write-EventLog , the script does not stop even when you specifiy -ErrorAction Stop it breaks out of the Catch block and then continues.
+        Try{
+            Write-EventLog -LogName Application -EventId 2663 -Message $errorMsg -Source "Bond VBI" -ErrorAction Stop
+           }
+            Catch{
+            }
+
+        Write-Error $errorMsg;
+        exit;
+
+   }
+
+   # Show current working directory 
+   Get-Location | Write-Host 
+
+   #Read in options from the json options file and convert encrypted password to plaintext for use while the program is running
+
+   $options = ConvertFrom-Json $optionsJson
+
+    return $options
+
+ }
 
 
 
@@ -23,8 +66,9 @@ Function Get-VeeamVersion {
 
 
 Clear-Host
-Set-Location $rootDir 
 
+$options = readJobOptions -options_file $options_file ;
+$rootDir = $options.rootDirectory;
 
 
 # Add Veeam snap-in if required
@@ -128,6 +172,7 @@ $_ | Get-VBRJobObject | Select -Property Name, jobId , approxSizeString , VSSOpt
 } | Out-File $path -Append
 
 $currentSummaryFile = $rootDir + "\Veeam_Backup_Summary" + ".txt"
+
 $currentSummary = $null;
 $currentSummary = Get-ChildItem -Path $currentSummaryFile -ErrorAction SilentlyContinue
 
@@ -141,10 +186,11 @@ if($currentSummary -ne $null){
   }
 }
 
-#$force = $true;
+$force = $true;
 # If the -force switch is true set changedFlag to true regardless
 if($force -eq $true){
     $changedFlag = $true
+    
   }
 
 # if changed update the current summary file and upload to bwiki
@@ -152,18 +198,21 @@ if($changedFlag){
 
    Move-Item -Path $path -Destination $currentSummaryFile -Force
    Get-Location | Write-Host
+
+   $upload_file = $currentSummaryFile
+   $parent_page = $options.parentPage
    
+ #  sendToBwiki -options_file $site_options_file -job_options_file $options_file
    #Note the space after the exe is significant don't ask me why I don't know it just is :( 
    # Call bond_vbi_x64.exe to upload the file specified in options 
    # $options is the fully qualified path of the vbw-options.json file which has been passed to this script as a parameter.
 
-   if($options) {
+        
         Write-Host 
-        &"C:\bond\bond_vbi_x64.exe " --% -read_options $options
-    }
-    else{
-      $vbiOutput  =  &"C:\bond\bond_vbi_x64.exe "  
-    }
+       
+        &"C:\bond\bond_vbi_x64.exe "  -site_options $site_options_file -job_options $options_file 
+    
+   
 
 }
  ################### SEND EMAIL ######################################
@@ -196,4 +245,5 @@ $smtpserver = "$SITEID-MSX001"
 #$smtp.Send($message)
 
 #################################################################################
+
 
