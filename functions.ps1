@@ -18,17 +18,6 @@ Param(
 
 [string]$mx ,
 
-#Page Title is the title in bwiki needs to be unique within the space as that is the initial search term. 
-# spaces will be replaced with + sign so it can be used in the URI
-[string]$pageTitle,
-
-
-[string]$fileToUpload,
-
-
-[string[]]$emailTo ,
-
-[string]$parentPage="",
 
 [string]$key 
 
@@ -36,31 +25,17 @@ Param(
 
 )
  
- #check to see if we need to create an options file
+ #check to see if we have all information to create a site options file
 
- #if($write_options){
- <#
- "Username is $username"
- "Password is $password"
- "SiteID is $siteId" 
- "SpaceKey is $spaceKey" 
- "mx is $mx" 
- "emailTO is $emailTo" 
- "PageTitle is $pageTitle" 
- "fileToUpLoad is $fileToUpload"
- #>
-
-   if($username -ne "" -and $password -ne ""   -and $siteId -ne ""  -and $spaceKey -ne "" -and $mx -ne "" -and $emailTo -ne ""  -and $pageTitle -ne "" -and $key -ne "" -and $fileToUpload -ne ""  ){
+   if($username -ne "" -and $password -ne ""   -and $siteId -ne ""  -and $spaceKey -ne "" -and $mx -ne ""    -and $key -ne ""  ){
      
      # Write options file 
      Write-Host "Creating File >>> ";
      
-     #$jsonFileToUpload = $fileToUpload
+     #
      
      #Convert Password to an encrypted string that can be saved 
      # see http://stackoverflow.com/questions/7468389/powershell-decode-system-security-securestring-to-readable-password
-
-    
     
      $KeyBytes = [System.text.Encoding]::ASCII.GetBytes($key);
 
@@ -75,11 +50,7 @@ Param(
        userName = $username
        siteId = $siteId
        spaceKey = $spaceKey
-       fileToUpload = $fileToUpload
        mx = $mx 
-       emailNotifications = $emailTo
-       pageTitle = $pageTitle
-       parentPage=$parentPage
        key = $base64KeyString
      }
 
@@ -101,27 +72,10 @@ Param(
  
  }
  
-Function callWriteOptions {
-
+Function parseArgs {
     Param(
         [string[]] $args2pass
     )
-    
-    # This function takes the "String" passed in from the command line and turns them into arguments
-    # these arguments are then passed into the writeOptions function to create the options file
-
-    #"Args are $args"
-
-     
-    #$args2pass = arg
-
-    #"Count of args to pass is $args2Pass "
-
-    #for($i = 1; $i -lt $args.Count ;$i++) {
-        #$args2pass[$i - 1] = $args[$i];
-    #}
-
-    #"Args to pass are $args2pass" 
 
     $hashArgs = @{}
     $key = ""; 
@@ -136,12 +90,84 @@ Function callWriteOptions {
             #"Value is $_" 
         }
      }
-        writeOptions -username $hashArgs.Get_Item('-username') -password $hashArgs.Get_Item('-password') -pageTitle $hashArgs.Get_Item('-pageTitle') -mx $hashArgs.Get_Item('-mx') -fileToUpload $hashArgs.Get_Item('-fileToUpload') -emailTo $hashArgs.Get_Item('-emailTo') -siteId $hashArgs.Get_Item('-siteId') -spaceKey $hashArgs.Get_Item('-spaceKey') $hashArgs.Get_Item('-ParentPage') $hashArgs.Get_Item('-key')
+
+     return $hashArgs;
+}
+
+Function writeJobOptions{
+    Param(
+
+#Page Title is the title in bwiki needs to be unique within the space as that is the initial search term. 
+# spaces will be replaced with + sign so it can be used in the URI
+[string]$page_title ,
+
+
+[string]$file ,
+
+
+[string[]]$email_to ,
+
+[string]$root_directory,
+
+[string]$parent_page_title = ""
+)
+
+
+if( $email_to -eq "" -or $page_title -eq "" -or $file -eq "" -or $root_directory -eq "" ){
+        Write-Host " All parameters except parent_page_title must be specified ";
+        Write-Host " use -help to see options for -write_job_options"
+        exit -5 ; 
+}
+
+$a = 5;
+$props = @{
+
+       fileToUpload = $file
+       emailNotifications = $email_to
+       pageTitle = $page_title
+       parentPage=$parent_page_title
+       rootDirectory=$root_directory
+      
+     }
+
+     $options = New-Object PSObject -Property $props
+
+     Try{
+        ConvertTo-Json $options | Out-File "job-options.json" -ErrorAction Stop
+     }
+     Catch{
+          Write-Error "Error creating options file "
+          exit; 
+     }
+
+
+
+}
+Function callWriteOptions {
+
+    Param(
+        [string[]] $args2pass
+    )
+    
+     
+        $hashArgs = parseArgs -args2pass $args2pass;
+
+    
+        writeOptions -username $hashArgs.Get_Item('-username') -password $hashArgs.Get_Item('-password') -mx $hashArgs.Get_Item('-mx')   -siteId $hashArgs.Get_Item('-siteId') -spaceKey $hashArgs.Get_Item('-spaceKey') -key $hashArgs.Get_Item('-key')
 
 }
 
 
-Function readOptions {
+
+Function callWriteJobOptions{
+   Param(
+        [string[]] $args2pass
+    )
+    $hashArgs = parseArgs -args2pass $args2pass;
+    writeJobOptions -page_title $hashArgs.get_item('-page_title') -file $hashArgs.Get_Item('-file') -email_to $hashArgs.get_item('-email_to') -parent_page_title $hashArgs.get_item('-parent_page_title') -root_directory $hashArgs.get_item('-root_directory')
+}
+
+Function readSiteOptions {
 
  Param(
        [string] $options_file 
@@ -193,17 +219,59 @@ Function readOptions {
    return $options
 
  }
+ Function readJobOptions {
 
+ Param(
+       [string] $options_file 
+       )
+   
+   Try {
 
+        $optionsJson = Get-Content  $options_file -Raw -ErrorAction Stop
+
+   }
+
+   Catch{
+
+        $errorMsg = "Unable to find job-options.json file , Unable to continue" 
+
+        # Note when an error was encountered during Write-EventLog , the script does not stop even when you specifiy -ErrorAction Stop it breaks out of the Catch block and then continues.
+        Try{
+            Write-EventLog -LogName Application -EventId 2663 -Message $errorMsg -Source "Bond VBI" -ErrorAction Stop
+           }
+            Catch{
+            }
+
+        Write-Error $errorMsg;
+        exit;
+
+   }
+
+   # Show current working directory 
+   Get-Location | Write-Host 
+
+   #Read in options from the json options file and convert encrypted password to plaintext for use while the program is running
+
+   $options = ConvertFrom-Json $optionsJson
+
+    return $options
+
+ }
 
 Function sendToBwiki {
+
   Param(
         [string]$options_file = "vbw-options.json" ,
-        [string] $upload_file  = "",
-        [string] $parent_page = ""
+        [string] $job_options_file 
   )
 
+  
+$vbw_options = readSiteOptions -options_file $options_file
+$job_options  = readJobOptions -options_file $job_options_file
+
 $testOptions = $true;
+
+$upload_file = $job_options.rootDirectory + '\' +  $job_options.fileToUpload
 
 if($upload_file -ne "") {
   $testOptions = Test-Path $upload_file;
@@ -214,14 +282,13 @@ if($testOptions -ne $true) {
   exit;
   }
 
-$vbw_options = readOptions -options_file $options_file
 
 Write-Host "PassLen is" + $vbw_options.plainTextPassword.Length  ;
 
-$pageTitleParam = $vbw_options.pageTitle
+$pageTitleParam = $job_options.pageTitle
 $getPageTitleParam = $pageTitleParam.replace(' ',"+")
 
-$parentPageTitleParam = $vbw_options.parentPage.replace(' ',"+")
+$parentPageTitleParam = $job_options.parentPage.replace(' ',"+")
 
 $spaceKeyParam = $vbw_options.spaceKey
 
@@ -387,21 +454,26 @@ if($args.count -gt 1){
  Write-Host  "Args are $args"
 #If help
   if($args[1] -eq "-help"){
-    Write-Host " To create an options file use -write_options as the first parameter and ensure you have included all of the parameters below after specifying -write_options"
+    
     Write-Host " -username [string]"
     Write-HOst " -password [string]" 
     Write-HOst " -siteId [string]"
     Write-Host " -spaceKey [string]"
     Write-Host " -siteId [string]"
-    Write-Host " -pageTitle [string] "
-    Write-Host " -fileToUpload [string] "
     Write-Host " -mx [string]"
     Write-Host " -key [string]" 
-    Write-Host " -emailTo (make sure it is in format first@Email,second@Email with no spaces between the addresses and comma)" 
+   
+    
+    Write-Host " To create a site options file use -write_job_options as the first parameter and ensure you have included all (except any optional) the parameters below after specifying -write_job_options"
+    Write-Host " -page_title [string] "
+    Write-Host " -file (to send to Bwiki) [string] make sure that this is a fully qualified string"
+    Write-Host " -email_to (make sure it is in format first@Email,second@Email with no spaces between the addresses and comma)" 
+    Write-Host " -root_directory [string] "
+    Write-Host " -parent_page_title (Optional)" 
+
     Write-Host " To specify a different vbw-options.(json|csv) file than the default current directory "
     Write-Host " Use the -read_options switch to specify the fully qualified path to the options file to be used. (ensure it is quoted)" 
-   # Write-Host " To specify the file to upload the first switch must be -file and the fully qualified path to the file (ensure it is quoted)"
-   # Write-Host " -read_options can be used with -file but must come after -file "
+   
     exit; 
   }
   #if Write
@@ -414,34 +486,19 @@ if($args.count -gt 1){
     Write-Host "Read Options are " + $args
     sendToBwiki -options_file $args[2]; 
   }
+  elseif($args[1] -eq "-write_job_options"){
+    callWriteJobOptions $args[2..$args.Count]
 
-  #if file 
-  <# elseif($args[1] -eq "-file" ) {
+  }
 
-    $_file = $null;
-    $_options = $null;
-
-    if($args.Count -eq 3){
-       
-        $_file = $args[2]
-
-    }
-    elseif($args.Count -eq 4){
-        #look for options file
-        $_file = $args[2]
-        $_options = $args[4] 
-    }
-    else{
-        Write-Error "Unable to parse options use -help for the correct format" 
-    }
-
-    if($_options -ne $null ){
-        sendToBwiki -options_file $_options -upload_file $_file;
-    }
-    else{
-        sendToBwiki -options_file -file $_file;
-    }
-  } #>
+  elseif($args[1] -eq "-site_options" ){
+  
+    $hashArgs = parseArgs $args[2..$args.Count]
+    write-host $hashArgs
+    pause 
+    sendToBwiki -options_file $hashArgs.get_item('-site_options') -job_options_file $hashArgs.get_item('-job_options')
+  }
+  
   
   #it's an error 
   else {
