@@ -3,9 +3,9 @@ Param(
   [switch]$force,
 
   #job options file is in the current directory
-  [string]$options_file = "C:\Bond\TEST\Veeam\job-options.json" ,
+  [string]$job_options_file = "job-options.json" ,
 
-  [string]$site_options_file = "C:\Bond\TEST\vbw-options.json" 
+  [string]$site_options_file = "vbw-options.json" 
   
  
 )
@@ -67,7 +67,7 @@ Function Get-VeeamVersion {
 
 Clear-Host
 
-$options = readJobOptions -options_file $options_file ;
+$options = readJobOptions -options_file $job_options_file ;
 $rootDir = $options.rootDirectory;
 
 
@@ -202,7 +202,7 @@ if($changedFlag){
    $upload_file = $currentSummaryFile
    $parent_page = $options.parentPage
    
- #  sendToBwiki -options_file $site_options_file -job_options_file $options_file
+ #  sendToBwiki -options_file $site_options_file -job_options_file $job_options_file
    #Note the space after the exe is significant don't ask me why I don't know it just is :( 
    # Call bond_vbi_x64.exe to upload the file specified in options 
    # $options is the fully qualified path of the vbw-options.json file which has been passed to this script as a parameter.
@@ -210,7 +210,7 @@ if($changedFlag){
         
         Write-Host 
        
-        &"C:\bond\bond_vbi_x64.exe "  -site_options $site_options_file -job_options $options_file 
+        &"C:\bond\bond_vbi_x64.exe "  -site_options $site_options_file -job_options $job_options_file 
     
    
 
