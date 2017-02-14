@@ -210,7 +210,7 @@ if($changedFlag){
         
         Write-Host 
        
-        &"C:\bond\bond_vbi_x64.exe "  -site_options $site_options_file -job_options $job_options_file 
+        &"C:\bond\bond_vbi\bond_vbi_x64.exe "  -site_options $site_options_file -job_options $job_options_file 
     
    
 
