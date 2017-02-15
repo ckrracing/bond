@@ -1,4 +1,22 @@
-﻿Param(
+﻿<#
+    # key is base64 encoded
+    # host can be either vcenter appliance or esxi hosts , use comma for multiple esxi hosts eg <siteid>-esx001,<siteid>-esx002 
+    # parentPage isn't used.
+
+    {
+        "rootDirectory":  "C:\\Bond\\Vmware\\",
+        "username":  <read only account>,
+        "key":  "N1hHP3BWOTk4bU1WeVBFRQ==",
+        "password":  "76492d1116743f0423413b16050a5345MgB8AEwAVgBjAGkAYQBhAHUAQQBxAE0AVQBRAFgARQAzAFgASABBAGcAUgA4AGcAPQA9AHwAMQA3ADIAOABlAGMANQBjAGYAZABlADgAYQAxAGMAOAAyADEAOQAwADMAZgA2AGIAOQAzADcAZAA5ADcANwAyAGEAOABjAGYAMAA5ADcANgBlADgANQBkADcAYgBmADQAYgA2ADgAYgAzADEAYwA1AGEANAA0AGQAOQA2ADMAZgA=",
+        "host":  "0515-esx003",
+        "parentPage":  "0515 - Esxi",
+        "pageTitle":  "0515 - Configuration Backups",
+        "fileToUpload":  "vmware_host_config.txt"
+    }
+
+#>
+
+Param(
 
   [switch]$force,
 
@@ -64,7 +82,7 @@ Function readJobOptions {
    }
 
    # Show current working directory 
-   Get-Location | Write-Host 
+   # Get-Location | Write-Host 
 
    #Read in options from the json options file and convert encrypted password to plaintext for use while the program is running
 
@@ -73,6 +91,9 @@ Function readJobOptions {
    #Add-Member -InputObject $options -NotePropertyName 'plainTextPassword' -NotePropertyValue (getPassWOrd -options $options)
    #$options.plainTextPassword = getPassword -options $options; 
 
+   $hosts = $o.host.split(',');
+
+   $o | Add-Member hosts $hosts;
 
    return $o
 
@@ -83,25 +104,34 @@ Function readJobOptions {
 
 $site_options_file = "C:\Bond\bond_vbi\vbw-options.json" ;
 
-$job_options_file = "C:\Bond\vmware\job-options.json" ;
+$job_options_file = "C:\Bond\vmware\0515\job-options.json" ;
 
 $options =  readJobOptions -options_file $job_options_file
 
 $pass = (getPassWord -options $options)
 
-$esxHost = Connect-VIServer -Server $options.host -User $options.username -Password $pass
 
-Get-VMHost | Get-VMHostFirmware  -BackupConfiguration -DestinationPath $options.rootDirectory
 
-Disconnect-VIServer -Confirm:$false
+ForEach($esxhost in $options.hosts){
 
+    $esxHost = Connect-VIServer -Server $options.host -User $options.username -Password $pass
+    Get-VMHost | Get-VMHostFirmware  -BackupConfiguration -DestinationPath $options.rootDirectory
+    Disconnect-VIServer -Confirm:$false
+    
+    }
+
+    
 $fileToUpload = $options.rootDirectory + '\' + $options.fileToUpload;
+
+# Get the name of the files uploaded to -DestinationPath 
 $configs = Get-ChildItem -Path $options.rootDirectory -Filter "*.tgz" -Name
 
+#backup current $fileToUpload
 if(Test-Path -Path $fileToUpload){
   move -Force $fileToUpload ($options.rootDirectory + '\' + $options.fileToUpload + '.bak')
 } 
- 
+
+#write the full path of the configuration files to the fileToUpload
 ForEach($backup in $configs){
 
     $options.rootDirectory + '\' + $backup | Out-File -FilePath $fileToUpload -Append
